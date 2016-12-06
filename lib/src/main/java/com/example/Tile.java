@@ -39,4 +39,11 @@ public class Tile
     {
         return num;
     }
+
+    public void setNum(int x) { num = x; }
+
+    public void makeMine()
+    {
+        mine = true;
+    }
 }

@@ -1,6 +1,7 @@
 package com.example;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Created by daniel on 10/30/2016.
@@ -10,13 +11,25 @@ public class Board
 
     //The board is an ArrayList of ArrayLists.
     //Each list within the list is a row.
-    ArrayList<ArrayList<Tile>> board = new ArrayList<ArrayList<Tile>>(8);
+    ArrayList<ArrayList<Tile>> board = new ArrayList<ArrayList<Tile>>();
 
     public Board(int rows, int cols, int mines)
     {
 
-        //See description below
-        reduceColumns();
+        //Add each row
+        for(int y = 0; y < rows; y++)
+        {
+            addRow();
+
+            //Add each tile in each row
+            for(int x = 0; x < cols; x++)
+            {
+                addTile(y);
+            }
+        }
+
+
+        //System.out.println(board.size() + " " + board.get(0).size());
 
         //If there are supposed to be more than 8 rows or cols in the board
         if(rows > 8)
@@ -30,6 +43,8 @@ public class Board
             for(int i = (cols-8); i <= cols; i++)
                 addCol();
         }
+
+        initializeTiles();
     }
 
 
@@ -39,16 +54,20 @@ public class Board
         I need them to default to a size of 8.
         Not sure how to control the size of the
         ArrayLists within the ArrayList, so doing it manually.
-    */
+
     private void reduceColumns()
     {
         //removes the last to tiles in each nestled list
         for(int i = 0; i < 8; i++)
         {
+            System.out.println("hgfiojrio");
+
+            System.out.println(board.get(i).size());
             board.get(i).remove(8);
             board.get(i).remove(9);
         }
     }
+    */
 
     public void addRow()
     {
@@ -70,5 +89,331 @@ public class Board
         Tile x = new Tile(0, false);
         board.get(i).add(x);
     }
-    
+
+
+    public Tile createTile()
+    {
+        Tile x = new Tile(0, false);
+        return x;
+    }
+
+
+    private void initializeTiles()
+    {
+        int rows = board.size();
+        int cols = board.get(0).size() - 1;
+        for(int y = 0; y < rows; y++)
+        {
+            for(int x = 0; x < cols; x++)
+            {
+                board.get(y).set(x, createTile());
+            }
+        }
+    }
+
+    public void selectMineLocations(int maxY, int maxX, int startY, int startX, int numMines)
+    {
+        Random r = new Random();
+        maxX--;
+        maxY--;
+
+        //Arrays storing the coordinates of the starting tile and each mine
+        //Checks this to make sure a mine isn't placed where it isn't supposed to be
+
+        ArrayList<Integer> unusableY = new ArrayList<Integer>();
+        ArrayList<Integer> unusableX = new ArrayList<Integer>();
+
+        //Initial tile is added
+        unusableY.add(startY);
+        unusableX.add(startX);
+
+        //All tiles around initial tile are added
+        if(startY > 0 && startX > 0)
+        {
+            unusableX.add(startX - 1);
+            unusableY.add(startY - 1);
+        }
+        if(startY > 0)
+        {
+            unusableX.add(startX);
+            unusableY.add(startY - 1);
+        }
+        if(startX < maxX && startY > 0)
+        {
+            unusableX.add(startX + 1);
+            unusableY.add(startY - 1);
+        }
+        if(startX > 0)
+        {
+            unusableX.add(startX - 1);
+            unusableY.add(startY);
+        }
+        if(startX < maxX)
+        {
+            unusableX.add(startX + 1);
+            unusableY.add(startY);
+        }
+        if(startX > 0 && startY < maxY)
+        {
+            unusableX.add(startX - 1);
+            unusableY.add(startY + 1);
+        }
+        if(startY < maxY)
+        {
+            unusableX.add(startX);
+            unusableY.add(startY + 1);
+        }
+        if(startX < maxX && startY < maxY)
+        {
+            unusableX.add(startX + 1);
+            unusableY.add(startY + 1);
+        }
+
+        for(int i = 0; i < numMines; i++)
+        {
+            int x = r.nextInt(maxX);
+            int y = r.nextInt(maxY);
+
+            while(notUsable(unusableY, unusableX, x, y) || board.get(y).get(x).getMine())
+            {
+                x = r.nextInt(maxX);
+                y = r.nextInt(maxY);
+            }
+
+            board.get(y).get(x).makeMine();
+
+            //System.out.println(x + " " + y);
+            //System.out.println(i);
+
+        }
+    }
+
+    private boolean notUsable(ArrayList<Integer> unusableY, ArrayList<Integer> unusableX, int x, int y)
+    {
+        boolean xValid = true;
+        boolean yValid = true;
+
+        for(int i = 0; i < unusableX.size(); i++)
+        {
+            if(unusableX.get(i) == x)
+                xValid = false;
+        }
+
+        for(int i = 0; i < unusableY.size(); i++)
+        {
+            if(unusableY.get(i) == y)
+                yValid = false;
+        }
+        if(xValid || yValid)
+            return false;
+        else
+            return true;
+    }
+
+    public void setBoardNums()
+    {
+        //Nums for every tile with 8 tiles surrounding it
+        for(int y = 1; y < (board.size() - 1); y++)
+        {
+            for(int x = 1; x < (board.get(0).size() - 1); x++)
+            {
+                int a = calculateNumsInner(y, x);
+                board.get(y).get(x).setNum(a);
+            }
+        }
+
+        //Nums for upper row(not corners)
+        for(int x = 1; x < (board.get(0).size() - 1); x++)
+        {
+            int a = calculateNumsTop(x);
+            board.get(0).get(x).setNum(a);
+        }
+
+        //Nums for lower row(not corners)
+        for(int x = 1; x < (board.get(0).size() - 1); x++)
+        {
+            int a = calculateNumsBottom(x);
+            board.get(board.size() - 1).get(x).setNum(a);
+        }
+
+        //Nums for left side(not corners)
+        for(int y = 1; y < (board.size() - 1); y++)
+        {
+            int a = calculateNumsLeft(y);
+            board.get(y).get(0).setNum(a);
+        }
+
+        //Nums for right side(not corners)
+        for(int y = 1; y < (board.size() - 1); y++)
+        {
+            int a = calculateNumsRight(y);
+            board.get(y).get(board.get(0).size() - 1).setNum(a);
+        }
+
+        //Nums for corners
+        setNumsForCorners();
+    }
+
+    private void setNumsForCorners()
+    {
+        int upperLeft = 0;
+        int upperRight = 0;
+        int lowerLeft = 0;
+        int lowerRight = 0;
+
+        if(board.get(0).get(1).getMine())
+            upperLeft++;
+        if(board.get(1).get(0).getMine())
+            upperLeft++;
+        if(board.get(1).get(1).getMine())
+            upperLeft++;
+        board.get(0).get(0).setNum(upperLeft);
+
+        if(board.get(0).get(board.get(0).size() - 2).getMine())
+            upperRight++;
+        if(board.get(1).get(board.get(0).size() - 2).getMine())
+            upperRight++;
+        if(board.get(1).get(board.get(0).size() - 1).getMine())
+            upperRight++;
+        board.get(0).get(board.get(0).size() - 1).setNum(upperRight);
+
+        if(board.get(board.size() - 2).get(0).getMine())
+            lowerLeft++;
+        if(board.get(board.size() - 2).get(1).getMine())
+            lowerLeft++;
+        if(board.get(board.size() - 1).get(1).getMine())
+            lowerLeft++;
+        board.get(board.size() - 1).get(0).setNum(lowerLeft);
+
+        if(board.get(board.size() - 2).get(board.get(0).size() - 2).getMine())
+            lowerRight++;
+        if(board.get(board.size() - 2).get(board.get(0).size() - 1).getMine())
+            lowerRight++;
+        if(board.get(board.size() - 1).get(board.get(0).size() - 2).getMine())
+            lowerRight++;
+        board.get(board.size() - 1).get(board.get(0).size() - 1).setNum(lowerRight);
+    }
+
+    private int calculateNumsRight(int y)
+    {
+        int numMines = 0;
+
+        if(board.get(y - 1).get(board.get(0).size() - 2).getMine())
+            numMines++;
+        if(board.get(y - 1).get(board.get(0).size() - 1).getMine())
+            numMines++;
+        if(board.get(y).get(board.get(0).size() - 2).getMine())
+            numMines++;
+        if(board.get(y + 1).get(board.get(0).size() - 2).getMine())
+            numMines++;
+        if(board.get(y + 1).get(board.get(0).size() - 1).getMine())
+            numMines++;
+
+        return numMines;
+    }
+
+    private int calculateNumsLeft(int y)
+    {
+        int numMines = 0;
+
+        if(board.get(y - 1).get(0).getMine())
+            numMines++;
+        if(board.get(y - 1).get(1).getMine())
+            numMines++;
+        if(board.get(y).get(1).getMine())
+            numMines++;
+        if(board.get(y + 1).get(0).getMine())
+            numMines++;
+        if(board.get(y + 1).get(1).getMine())
+            numMines++;
+
+        return numMines;
+    }
+
+    private int calculateNumsBottom(int x)
+    {
+        int numMines = 0;
+        int y = board.size() - 1;
+
+        if(board.get(y - 1).get(x - 1).getMine())
+            numMines++;
+        if(board.get(y - 1).get(x).getMine())
+            numMines++;
+        if(board.get(y - 1).get(x + 1).getMine())
+            numMines++;
+        if(board.get(y).get(x - 1).getMine())
+            numMines++;
+        if(board.get(y).get(x + 1).getMine())
+            numMines++;
+
+        return numMines;
+    }
+
+    private int calculateNumsTop(int x)
+    {
+        int numMines = 0;
+
+        if(board.get(0).get(x - 1).getMine())
+            numMines++;
+        if(board.get(0).get(x + 1).getMine())
+            numMines++;
+        if(board.get(1).get(x - 1).getMine())
+            numMines++;
+        if(board.get(1).get(x).getMine())
+            numMines++;
+        if(board.get(1).get(x + 1).getMine())
+            numMines++;
+
+        return numMines;
+    }
+
+    private int calculateNumsInner(int y, int x)
+    {
+        int numMines = 0;
+
+        if(board.get(y - 1).get(x - 1).getMine())
+            numMines++;
+        if(board.get(y - 1).get(x).getMine())
+            numMines++;
+        if(board.get(y - 1).get(x + 1).getMine())
+            numMines++;
+        if(board.get(y).get(x - 1).getMine())
+            numMines++;
+        if(board.get(y).get(x + 1).getMine())
+            numMines++;
+        if(board.get(y + 1).get(x - 1).getMine())
+            numMines++;
+        if(board.get(y + 1).get(x).getMine())
+            numMines++;
+        if(board.get(y + 1).get(x + 1).getMine())
+            numMines++;
+
+
+        return numMines;
+    }
+
+    public boolean checkIfMine(int x, int y)
+    {
+        if(board.get(y).get(x).getMine())
+            return true;
+        else
+            return false;
+    }
+
+    public void setState(int x, int y, int state)
+    {
+        board.get(y).get(x).setState(state);
+    }
+
+    public int getState(int x, int y)
+    {
+        return board.get(y).get(x).getState();
+    }
+
+    public int getNum(int x, int y)
+    {
+        return board.get(y).get(x).getNum();
+    }
+
+    //public int getSize(int i) { return board.get(i).size(); }
 }
