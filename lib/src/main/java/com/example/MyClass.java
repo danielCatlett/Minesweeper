@@ -62,13 +62,12 @@ public class MyClass
             //Respond by either putting/clearing a/the flag or question mark there,
             //clearing the tile, or killing the player
 
-            //Cancel
-            if(state == 5)
-
-
             //You already did that you dummie
             if(state == 5)
                 System.out.println("Tile is already cleared");
+            //Player cancelled selecting this tile
+            else if(state == 4)
+                System.out.println("Tile selection cancelled");
             //Player trying to clear the tile
             else if(state == 3)
             {
