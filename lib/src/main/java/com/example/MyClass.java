@@ -140,11 +140,10 @@ public class MyClass
             System.out.println("Would you like to\n" +
                     "1. Remove the flag here\n" +
                     "2. Put a question mark here\n" +
-                    "3. Clear this tile\n" +
-                    "4. Cancel selecting this tile\n");
+                    "3. Cancel selecting this tile\n");
 
             int req = in.nextInt();
-            while(req < 1 || req > 4)
+            while(req < 1 || req > 3)
             {
                 System.out.println("Invalid response. Enter a number between 1 and 4");
                 req = in.nextInt();
@@ -153,6 +152,8 @@ public class MyClass
             //Removing the flag, so we want to set the tile back to 0
             if(req == 1)
                 return 0;
+            else if(req == 3)
+                return 4;
             else
                 return req;
         }
